@@ -48,6 +48,40 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _parse_manifest_yaml(text: str) -> dict[str, Any] | None:
+    """解析 manifest.yaml：优先 PyYAML，缺包时退回最小顶层键值解析（够索引用）。"""
+    try:
+        import yaml
+
+        data = yaml.safe_load(text) or {}
+        return data if isinstance(data, dict) else None
+    except ImportError:
+        pass
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! YAML 解析失败: {e}", file=sys.stderr)
+        return None
+    # 最小兜底：只取顶层 `key: value`（manifest 必需字段都是平的）
+    data: dict[str, Any] = {}
+    for line in text.splitlines():
+        if not line or line[:1] in (" ", "\t", "#") or ":" not in line:
+            continue
+        k, _, v = line.partition(":")
+        k = k.strip()
+        v = v.strip()
+        if not k:
+            continue
+        if v == "[]":
+            data[k] = []
+        elif v.startswith("[") and v.endswith("]"):
+            import re as _re
+
+            pairs = _re.findall(r'"([^"]*)"|\'([^\']*)\'', v)
+            data[k] = [a or b for a, b in pairs]
+        else:
+            data[k] = v.strip("'\"")
+    return data or None
+
+
 def _read_manifest_from_lmp(lmp_path: Path) -> dict[str, Any] | None:
     """Read manifest.yaml from inside a .lmp (zip) package. None on failure."""
     try:
@@ -63,11 +97,8 @@ def _read_manifest_from_lmp(lmp_path: Path) -> dict[str, Any] | None:
             if target is None:
                 print(f"  ! SKIP {lmp_path.name}: no manifest.yaml inside", file=sys.stderr)
                 return None
-            import yaml
-
-            data = yaml.safe_load(z.read(target).decode("utf-8")) or {}
-            return data if isinstance(data, dict) else None
-    except (OSError, zipfile.BadZipFile, Exception) as e:  # noqa: BLE001 - 索引器单条失败不中断
+            return _parse_manifest_yaml(z.read(target).decode("utf-8"))
+    except (OSError, zipfile.BadZipFile) as e:
         print(f"  ! ERROR reading {lmp_path}: {e}", file=sys.stderr)
         return None
 
