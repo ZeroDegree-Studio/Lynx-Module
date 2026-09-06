@@ -1,21 +1,5 @@
 {
   "version": "1",
-  "updated_at": "2026-09-06T06:34:44.682507+00:00",
-  "modules": [
-    {
-      "module_id": "hello-module",
-      "name": "GitHub 测试模块",
-      "author": "lynx",
-      "version": "0.1.0",
-      "kind": "py-skill",
-      "category": "",
-      "description": "验证模块市场下载链路的最小示例：返回一条问候",
-      "permissions": [],
-      "official": true,
-      "license": "MIT",
-      "size_bytes": 1239,
-      "sha256": "2782a26bd5c3d8cf1f69b5696a0fae503ffe718babf92fc8821beb1c52079a4d",
-      "download_url": "packages/hello-module/hello-module-0.1.0.lmp"
-    }
-  ]
+  "updated_at": "2026-09-06T06:37:19.745098+00:00",
+  "modules": []
 }
